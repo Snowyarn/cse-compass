@@ -262,3 +262,75 @@ test('Backup Validation: rejects invalid or corrupt JSON safely', () => {
   const brokenRes = validateBackupJson(brokenJson);
   assert.equal(brokenRes.valid, false);
 });
+
+// 4. Date Utility Tests
+function getLocalDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+test('Date Utility: getLocalDateString matches local calendar date without UTC shift', () => {
+  // Test a time right after midnight (e.g. 00:15 AM)
+  const midnightDate = new Date(2026, 9, 18, 0, 15, 0); // Oct 18, 2026
+  const dateStr = getLocalDateString(midnightDate);
+  assert.equal(dateStr, '2026-10-18', 'Must remain on local date Oct 18, not shift to Oct 17');
+});
+
+test('Date Utility: leap year and end of month calculation', () => {
+  const leapDay = new Date(2024, 1, 29); // Feb 29, 2024
+  assert.equal(getLocalDateString(leapDay), '2024-02-29');
+
+  const yearEnd = new Date(2026, 11, 31); // Dec 31, 2026
+  assert.equal(getLocalDateString(yearEnd), '2026-12-31');
+});
+
+function parseLocalDateString(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return null;
+  const [year, month, day] = parts;
+  const date = new Date(year, month - 1, day, 0, 0, 0, 0);
+  return isNaN(date.getTime()) ? null : date;
+}
+
+function addDaysToLocalDate(dateStr, days) {
+  const base = parseLocalDateString(dateStr) || new Date();
+  base.setDate(base.getDate() + days);
+  return getLocalDateString(base);
+}
+
+function isOverdue(dateStr, completed) {
+  if (!dateStr || completed) return false;
+  return dateStr < getLocalDateString();
+}
+
+test('Date Utility: parseLocalDateString parses components accurately', () => {
+  const d = parseLocalDateString('2026-10-18');
+  assert.ok(d !== null);
+  assert.equal(d.getFullYear(), 2026);
+  assert.equal(d.getMonth(), 9); // October
+  assert.equal(d.getDate(), 18);
+
+  assert.equal(parseLocalDateString(''), null);
+  assert.equal(parseLocalDateString('invalid-date'), null);
+});
+
+test('Date Utility: addDaysToLocalDate handles month and year roll-over', () => {
+  const rollMonth = addDaysToLocalDate('2026-10-31', 1);
+  assert.equal(rollMonth, '2026-11-01');
+
+  const rollYear = addDaysToLocalDate('2026-12-31', 1);
+  assert.equal(rollYear, '2027-01-01');
+
+  const subtractDays = addDaysToLocalDate('2026-10-18', -3);
+  assert.equal(subtractDays, '2026-10-15');
+});
+
+test('Date Utility: isOverdue accurately detects past dates', () => {
+  assert.equal(isOverdue('2020-01-01', false), true);
+  assert.equal(isOverdue('2020-01-01', true), false); // completed task is never overdue
+  assert.equal(isOverdue('2099-01-01', false), false);
+});
+

@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,28 +35,7 @@ export default function TimerScreen() {
   // Interval timer ref
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    if (isRunning) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            handleTimerComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isRunning, mode]);
-
-  const handleTimerComplete = async () => {
+  const handleTimerComplete = useCallback(async () => {
     setIsRunning(false);
 
     if (mode === 'work') {
@@ -79,7 +57,28 @@ export default function TimerScreen() {
       setMode('work');
       setTimeLeft(workSeconds);
     }
-  };
+  }, [mode, settings.pomodoro_work_mins, logStudySession, selectedSubjectId, selectedTaskId, showToast, breakSeconds, workSeconds]);
+
+  useEffect(() => {
+    if (isRunning) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current!);
+            handleTimerComplete();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isRunning, handleTimerComplete]);
 
   const handleStart = async () => {
     setIsRunning(true);
@@ -295,6 +294,57 @@ export default function TimerScreen() {
             );
           })}
         </ScrollView>
+
+        {/* Link to Active Task (Optional) */}
+        {tasks.filter((t) => !t.completed).length > 0 && (
+          <>
+            <Text style={[styles.sectionHeading, { color: theme.textSecondary, marginTop: 12 }]}>
+              Focus on Specific Task (Optional)
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subjectsRow}>
+              <TouchableOpacity
+                onPress={() => setSelectedTaskId(null)}
+                style={[
+                  styles.subjectPill,
+                  {
+                    backgroundColor: selectedTaskId === null ? `${theme.primary}20` : theme.surface,
+                    borderColor: selectedTaskId === null ? theme.primary : theme.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.subjectPillText, { color: selectedTaskId === null ? theme.primary : theme.textSecondary }]}>
+                  None (General)
+                </Text>
+              </TouchableOpacity>
+              {tasks.filter((t) => !t.completed).map((t) => {
+                const isSelected = selectedTaskId === t.id;
+                return (
+                  <TouchableOpacity
+                    key={t.id}
+                    onPress={() => setSelectedTaskId(t.id)}
+                    style={[
+                      styles.subjectPill,
+                      {
+                        backgroundColor: isSelected ? `${theme.primary}25` : theme.surface,
+                        borderColor: isSelected ? theme.primary : theme.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.subjectPillText,
+                        { color: isSelected ? theme.primary : theme.textSecondary, fontWeight: isSelected ? '700' : '500' },
+                      ]}
+                    >
+                      {t.title}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </>
+        )}
 
         {/* Study Analytics Snapshot */}
         <View style={[styles.analyticsCard, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>

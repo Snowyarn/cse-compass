@@ -18,6 +18,7 @@ import { TaskCard } from '../../components/TaskCard';
 import { EmptyState } from '../../components/EmptyState';
 import { TaskSortOption } from '../../database/repository';
 import { TaskPriority } from '../../types';
+import { getLocalDateString, addDaysToLocalDate } from '../../utils/date';
 
 type FilterTab = 'all' | 'today' | 'overdue' | 'next7days' | 'high_priority' | 'completed';
 
@@ -34,7 +35,7 @@ export default function TasksScreen() {
   const [sortOption, setSortOption] = useState<TaskSortOption>('deadline');
   const [showSortModal, setShowSortModal] = useState(false);
 
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayStr = useMemo(() => getLocalDateString(), []);
 
   // Filter and sort tasks in-memory reactively
   const filteredTasks = useMemo(() => {
@@ -66,9 +67,7 @@ export default function TasksScreen() {
         result = result.filter((t) => !t.completed && t.due_date && t.due_date < todayStr);
         break;
       case 'next7days': {
-        const next7 = new Date();
-        next7.setDate(next7.getDate() + 7);
-        const next7Str = next7.toISOString().split('T')[0];
+        const next7Str = addDaysToLocalDate(todayStr, 7);
         result = result.filter(
           (t) => !t.completed && t.due_date && t.due_date >= todayStr && t.due_date <= next7Str
         );
@@ -169,6 +168,9 @@ export default function TasksScreen() {
           <TouchableOpacity
             style={[styles.iconButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
             onPress={() => setShowSortModal(true)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel="Sort tasks"
+            accessibilityRole="button"
           >
             <Ionicons name="swap-vertical" size={18} color={theme.textPrimary} />
           </TouchableOpacity>
@@ -176,6 +178,9 @@ export default function TasksScreen() {
           <TouchableOpacity
             style={[styles.primaryAddBtn, { backgroundColor: theme.primary }]}
             onPress={() => router.push('/task/create')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel="Create new task"
+            accessibilityRole="button"
           >
             <Ionicons name="add" size={20} color="#FFFFFF" />
             <Text style={styles.primaryAddBtnText}>Add</Text>

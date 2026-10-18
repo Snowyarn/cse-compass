@@ -16,7 +16,7 @@ import { router } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { useApp } from '../../context/AppContext';
 import { Project } from '../../types';
-import { Repository } from '../../database/repository';
+import { getDb } from '../../database/db';
 
 export default function ProjectsScreen() {
   const { theme } = useTheme();
@@ -59,8 +59,7 @@ export default function ProjectsScreen() {
 
   const handleAddMilestoneInline = (projectId: string) => {
     if (!newMilestoneTitle.trim()) return;
-    const db = Repository.createProject; // trigger re-render
-    const dbInst = require('../../database/db').getDb();
+    const dbInst = getDb();
     const msId = `ms-${Date.now()}`;
     dbInst.runSync(
       'INSERT INTO project_milestones (id, project_id, title, completed) VALUES (?, ?, ?, 0)',
@@ -124,9 +123,12 @@ export default function ProjectsScreen() {
 
                 <View style={{ flex: 1, marginLeft: 10 }}>
                   <Text style={[styles.projectName, { color: theme.textPrimary }]}>{p.name}</Text>
-                  <Text style={[styles.techStack, { color: theme.accent }]}>
-                    🛠 {p.tech_stack}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                    <Ionicons name="construct-outline" size={12} color={theme.accent} />
+                    <Text style={[styles.techStack, { color: theme.accent, marginTop: 0 }]}>
+                      {p.tech_stack}
+                    </Text>
+                  </View>
                 </View>
 
                 <TouchableOpacity onPress={() => handleDeleteProject(p)}>

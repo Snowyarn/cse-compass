@@ -1,4 +1,5 @@
-import { getDb } from './db';
+import { getDb, seedInitialData } from './db';
+import { getLocalDateString, addDaysToLocalDate } from '../utils/date';
 import {
   Task,
   Subtask,
@@ -39,7 +40,7 @@ export const Repository = {
       WHERE 1=1
     `;
     const params: (string | number)[] = [];
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString();
 
     if (filter) {
       if (filter.status === 'pending') {
@@ -53,9 +54,7 @@ export const Repository = {
         query += ' AND t.due_date < ? AND t.completed = 0';
         params.push(todayStr);
       } else if (filter.status === 'next7days') {
-        const next7 = new Date();
-        next7.setDate(next7.getDate() + 7);
-        const next7Str = next7.toISOString().split('T')[0];
+        const next7Str = addDaysToLocalDate(todayStr, 7);
         query += ' AND t.due_date >= ? AND t.due_date <= ? AND t.completed = 0';
         params.push(todayStr, next7Str);
       }
@@ -992,7 +991,6 @@ export const Repository = {
       DELETE FROM settings;
     `);
     // Re-seed
-    const { initDatabase } = require('./db');
-    initDatabase();
+    seedInitialData(db);
   },
 };

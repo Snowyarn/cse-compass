@@ -22,6 +22,7 @@ import {
   CodingLanguage,
   CodingTopic,
 } from '../../types';
+import { getLocalDateString } from '../../utils/date';
 
 const PLATFORMS: CodingPlatform[] = ['LeetCode', 'Codeforces', 'HackerRank', 'GeeksforGeeks', 'CodeChef', 'Other'];
 const LANGUAGES: CodingLanguage[] = ['C++', 'Python', 'Java', 'C', 'JavaScript', 'TypeScript', 'Go', 'Rust'];
@@ -87,7 +88,7 @@ export default function CodingTrackerScreen() {
       language,
       difficulty,
       topic,
-      attempt_date: new Date().toISOString().split('T')[0],
+      attempt_date: getLocalDateString(),
       status: 'solved',
       notes: notes.trim(),
       problem_url: problemUrl.trim() || undefined,
@@ -204,6 +205,37 @@ export default function CodingTrackerScreen() {
           })}
         </View>
 
+        {/* Topic Filter Chips */}
+        <Text style={[styles.filterLabel, { color: theme.textSecondary, marginTop: 10 }]}>FILTER BY TOPIC</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 4 }}>
+          {['all', ...TOPICS].map((t) => {
+            const isSelected = selectedTopic === t;
+            return (
+              <TouchableOpacity
+                key={t}
+                onPress={() => setSelectedTopic(t)}
+                style={[
+                  styles.chipSmall,
+                  {
+                    backgroundColor: isSelected ? theme.primary : theme.surface,
+                    borderColor: isSelected ? theme.primary : theme.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={{
+                    color: isSelected ? '#FFFFFF' : theme.textSecondary,
+                    fontSize: 11,
+                    fontWeight: isSelected ? '700' : '500',
+                  }}
+                >
+                  {t === 'all' ? 'All Topics' : t}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
         {/* Problem List */}
         <Text style={[styles.filterLabel, { color: theme.textSecondary, marginTop: 14 }]}>
           SOLVED PROBLEMS ({filteredProblems.length})
@@ -253,12 +285,32 @@ export default function CodingTrackerScreen() {
                     <Ionicons name="open-outline" size={16} color={theme.primary} />
                   </TouchableOpacity>
                 ) : null}
+
+                <TouchableOpacity
+                  onPress={() => {
+                    Alert.alert('Delete Problem', `Remove "${p.title}" from your coding tracker?`, [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Delete',
+                        style: 'destructive',
+                        onPress: () => {
+                          deleteCodingProblem(p.id);
+                          showToast('Problem deleted', 'info');
+                        },
+                      },
+                    ]);
+                  }}
+                  style={[styles.linkBtn, { borderColor: theme.borderSubtle, marginLeft: 6 }]}
+                >
+                  <Ionicons name="trash-outline" size={15} color={theme.danger} />
+                </TouchableOpacity>
               </View>
 
               {p.notes ? (
-                <View style={[styles.notesContainer, { backgroundColor: theme.surfaceSubtle }]}>
-                  <Text style={[styles.notesText, { color: theme.textSecondary }]}>
-                    💡 {p.notes}
+                <View style={[styles.notesContainer, { backgroundColor: theme.surfaceSubtle, flexDirection: 'row', alignItems: 'flex-start', gap: 6 }]}>
+                  <Ionicons name="bulb-outline" size={14} color={theme.primary} style={{ marginTop: 2 }} />
+                  <Text style={[styles.notesText, { color: theme.textSecondary, flex: 1 }]}>
+                    {p.notes}
                   </Text>
                 </View>
               ) : null}
@@ -313,30 +365,47 @@ export default function CodingTrackerScreen() {
               ))}
             </View>
 
-            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>Platform & Language</Text>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <View style={{ flex: 1 }}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                  {PLATFORMS.map((plat) => (
-                    <TouchableOpacity
-                      key={plat}
-                      onPress={() => setPlatform(plat)}
-                      style={[
-                        styles.chipSmall,
-                        {
-                          backgroundColor: platform === plat ? theme.primary : theme.inputBg,
-                          borderColor: theme.border,
-                        },
-                      ]}
-                    >
-                      <Text style={{ color: platform === plat ? '#FFFFFF' : theme.textSecondary, fontSize: 11, fontWeight: '600' }}>
-                        {plat}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            </View>
+            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>Platform</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+              {PLATFORMS.map((plat) => (
+                <TouchableOpacity
+                  key={plat}
+                  onPress={() => setPlatform(plat)}
+                  style={[
+                    styles.chipSmall,
+                    {
+                      backgroundColor: platform === plat ? theme.primary : theme.inputBg,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                >
+                  <Text style={{ color: platform === plat ? '#FFFFFF' : theme.textSecondary, fontSize: 11, fontWeight: '600' }}>
+                    {plat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>Programming Language</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+              {LANGUAGES.map((lang) => (
+                <TouchableOpacity
+                  key={lang}
+                  onPress={() => setLanguage(lang)}
+                  style={[
+                    styles.chipSmall,
+                    {
+                      backgroundColor: language === lang ? theme.primary : theme.inputBg,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                >
+                  <Text style={{ color: language === lang ? '#FFFFFF' : theme.textSecondary, fontSize: 11, fontWeight: '600' }}>
+                    {lang}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
             <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>DSA Topic</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 4 }}>

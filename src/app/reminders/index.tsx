@@ -153,7 +153,7 @@ export default function RemindersScreen() {
             </Text>
           </View>
           <Text style={[styles.infoText, { color: theme.textSecondary }]}>
-            Some Android OEMs (such as Xiaomi/MIUI, Samsung, and OnePlus) aggressively suspend background alarms. For highest reliability, set CSE Compass battery usage to "Unrestricted" in device App Settings.
+            Some Android OEMs (such as Xiaomi/MIUI, Samsung, and OnePlus) aggressively suspend background alarms. For highest reliability, set CSE Compass battery usage to &quot;Unrestricted&quot; in device App Settings.
           </Text>
         </View>
 

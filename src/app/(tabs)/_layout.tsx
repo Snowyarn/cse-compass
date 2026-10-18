@@ -1,7 +1,7 @@
 import React from 'react';
-import { Tabs, router } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { TouchableOpacity, Platform, View } from 'react-native';
+import { Platform } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function TabLayout() {

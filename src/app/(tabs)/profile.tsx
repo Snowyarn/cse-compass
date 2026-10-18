@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,15 +14,21 @@ import { router } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { useApp } from '../../context/AppContext';
 import { ReminderType } from '../../types';
+import { NotificationService } from '../../services/notificationService';
 
 export default function ProfileScreen() {
   const { theme, themeMode, setThemeMode } = useTheme();
   const { settings, updateSettings, resetAllData, showToast } = useApp();
 
+  const [hasNotifPerm, setHasNotifPerm] = useState<boolean | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [userName, setUserName] = useState(settings.user_name);
   const [collegeName, setCollegeName] = useState(settings.college_name);
   const [semester, setSemester] = useState(settings.semester.toString());
+
+  useEffect(() => {
+    NotificationService.checkPermissions().then(setHasNotifPerm);
+  }, []);
 
   const handleSaveProfile = () => {
     updateSettings({
@@ -299,6 +304,40 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <View style={[styles.rowDivider, { backgroundColor: theme.divider }]} />
+
+          {hasNotifPerm === false && (
+            <>
+              <TouchableOpacity
+                style={[styles.linkRow, { backgroundColor: `${theme.danger}15` }]}
+                onPress={async () => {
+                  const res = await NotificationService.requestPermissions();
+                  setHasNotifPerm(res.granted);
+                  if (res.granted) {
+                    showToast('Notification permission granted!', 'success');
+                  } else {
+                    Alert.alert(
+                      'Notifications Disabled',
+                      'Please open device Settings -> Apps -> CSE Compass -> Notifications and toggle notifications ON to receive deadline alarms.'
+                    );
+                  }
+                }}
+              >
+                <View style={[styles.linkIconCircle, { backgroundColor: `${theme.danger}25` }]}>
+                  <Ionicons name="notifications-off-outline" size={18} color={theme.danger} />
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={[styles.linkRowTitle, { color: theme.danger, fontWeight: '700' }]}>
+                    Enable Deadline Notifications
+                  </Text>
+                  <Text style={[styles.linkRowSub, { color: theme.textSecondary }]}>
+                    Permissions are currently disabled. Tap to grant permission.
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={theme.danger} />
+              </TouchableOpacity>
+              <View style={[styles.rowDivider, { backgroundColor: theme.divider }]} />
+            </>
+          )}
 
           <TouchableOpacity
             style={styles.linkRow}

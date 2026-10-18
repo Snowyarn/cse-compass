@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { useApp } from '../../context/AppContext';
-import { Assessment, AssessmentType } from '../../types';
+import { AssessmentType } from '../../types';
 
 const ASSESSMENT_TYPES: { id: AssessmentType; label: string }[] = [
   { id: 'mid_sem', label: 'Mid-Sem Exam' },
@@ -236,9 +236,12 @@ export default function AssessmentsScreen() {
               </View>
 
               {a.notes ? (
-                <Text style={[styles.notesText, { color: theme.textSecondary }]}>
-                  📝 {a.notes}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                  <Ionicons name="document-text-outline" size={14} color={theme.textMuted} />
+                  <Text style={[styles.notesText, { color: theme.textSecondary, flex: 1 }]}>
+                    {a.notes}
+                  </Text>
+                </View>
               ) : null}
             </View>
           );

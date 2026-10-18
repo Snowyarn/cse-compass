@@ -1,11 +1,30 @@
 import { Task } from '../types';
 
+/**
+ * Encapsulates a recommended task recommendation output, including its
+ * relative priority score and an explanation for the user.
+ */
 export interface TaskRecommendation {
   task: Task;
   score: number;
   reason: string;
 }
 
+/**
+ * Computes an academic urgency and impact score for a task.
+ * Higher scores represent tasks that should be tackled sooner.
+ * Completed tasks always return a negative score (-1) to be excluded from recommendations.
+ *
+ * Weight Factors:
+ * 1. Deadline Proximity (Overdue base: 1000+, Due Today: 600, Due Tomorrow: 380)
+ * 2. Priority Level (Urgent: +300, High: +180, Medium: +70)
+ * 3. Academic Task Type (Exams: +140, Assignments/Labs: +90, Coding: +50)
+ * 4. Estimated Time Sweet-spot (15-60 min tasks: +40 for momentum)
+ * 5. Subtask Checklist Momentum (+35 when partially completed)
+ *
+ * @param task The task to evaluate
+ * @returns Object with numeric score and human-readable explanation reason
+ */
 export const getTaskScore = (task: Task): { score: number; reason: string } => {
   if (task.completed) {
     return { score: -1, reason: 'Already completed' };
@@ -14,7 +33,6 @@ export const getTaskScore = (task: Task): { score: number; reason: string } => {
   let score = 0;
   const reasons: string[] = [];
   const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
 
   // 1. Deadline Proximity
   if (task.due_date) {
@@ -93,7 +111,13 @@ export const getTaskScore = (task: Task): { score: number; reason: string } => {
   };
 };
 
-// Select the single highest-impact "Focus Now" task
+/**
+ * Analyzes all pending tasks and selects the single highest-impact task
+ * to recommend in the "Focus Now" dashboard section.
+ *
+ * @param tasks Complete list of user tasks
+ * @returns TaskRecommendation containing the highest-ranked task and rationale, or null if all completed
+ */
 export const getRecommendedFocusTask = (tasks: Task[]): TaskRecommendation | null => {
   const pendingTasks = tasks.filter((t) => !t.completed);
   if (pendingTasks.length === 0) return null;

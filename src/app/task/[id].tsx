@@ -7,20 +7,23 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { useApp } from '../../context/AppContext';
-import { Task, Subtask } from '../../types';
+import { Task } from '../../types';
 import { Repository } from '../../database/repository';
 import { NotificationService } from '../../services/notificationService';
+import { getLocalDateString, addDaysToLocalDate } from '../../utils/date';
 
 export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { theme } = useTheme();
-  const { toggleTask, deleteTask, updateTask, toggleSubtask, showToast } = useApp();
+  const { toggleTask, deleteTask, updateTask, toggleSubtask, createTask, refreshAllData, showToast } = useApp();
 
   const [task, setTask] = useState<Task | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -32,7 +35,7 @@ export default function TaskDetailScreen() {
   const [editDueTime, setEditDueTime] = useState('');
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
-  const loadTask = () => {
+  const loadTask = React.useCallback(() => {
     if (!id) return;
     const t = Repository.getTaskById(id);
     if (t) {
@@ -42,11 +45,11 @@ export default function TaskDetailScreen() {
       setEditDueDate(t.due_date || '');
       setEditDueTime(t.due_time || '');
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     loadTask();
-  }, [id]);
+  }, [loadTask]);
 
   if (!task) {
     return (
@@ -111,16 +114,21 @@ export default function TaskDetailScreen() {
       completed: false,
       completed_at: undefined,
     };
-    Repository.createTask(copy, task.subtasks?.map((s) => ({ title: s.title })) || []);
+    const subtasksToCopy = task.subtasks?.map((s) => ({ title: s.title })) || [];
+    const remindersToCopy = task.reminders?.map((r) => ({
+      reminder_type: r.reminder_type,
+      scheduled_time: r.scheduled_time,
+    })) || [];
+
+    await createTask(copy, subtasksToCopy, remindersToCopy);
     showToast('Task duplicated!', 'success');
     router.back();
   };
 
   const handleSnooze = async () => {
-    // Snooze due date by +1 day
-    const current = task.due_date ? new Date(task.due_date) : new Date();
-    current.setDate(current.getDate() + 1);
-    const newDueDate = current.toISOString().split('T')[0];
+    // Snooze due date by +1 day using local date utility
+    const currentDueDate = task.due_date || getLocalDateString();
+    const newDueDate = addDaysToLocalDate(currentDueDate, 1);
 
     const updated = await updateTask({
       id: task.id,
@@ -134,6 +142,7 @@ export default function TaskDetailScreen() {
     if (!newSubtaskTitle.trim()) return;
     Repository.addSubtask(task.id, newSubtaskTitle.trim());
     setNewSubtaskTitle('');
+    refreshAllData();
     loadTask();
   };
 
@@ -165,7 +174,11 @@ export default function TaskDetailScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Status Toggle Header */}
         <TouchableOpacity
           activeOpacity={0.8}
@@ -437,6 +450,7 @@ export default function TaskDetailScreen() {
           </Text>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

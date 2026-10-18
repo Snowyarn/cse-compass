@@ -98,12 +98,17 @@
 ## 🚀 Quickstart & Development
 
 ### 1. Prerequisites
-- **Node.js**: v18 or higher (Node v24 tested)
+- **Node.js**: v18 or higher (Node v20 / v22 / v24 tested)
 - **npm**: v9 or higher
+- **Expo CLI**: bundled via `npx expo`
 
 ### 2. Install Dependencies
 ```bash
+# Clean dependency installation adhering to Expo SDK 57 peer requirements
 npm install --legacy-peer-deps
+
+# Automatically verify and repair package compatibility if needed
+npx expo install --fix
 ```
 
 ### 3. Run Development Server
@@ -113,17 +118,23 @@ npx expo start
 
 # Or with npm script
 npm run start
+
+# To run in remote tunnel mode (useful across separate Wi-Fi networks):
+npx expo start --tunnel
 ```
 
-### 4. Run TypeScript Check & Unit Tests
+### 4. Run Verification Suite (Linter, Typecheck, Diagnostics & Unit Tests)
 ```bash
-# TypeScript strict check (0 errors)
+# 1. ESLint check (0 errors, 0 warnings across all screens & models)
+npm run lint
+
+# 2. TypeScript strict check (0 errors)
 npm run typecheck
 
-# Run automated unit test suite (8/8 tests pass)
+# 3. Automated unit test suite (13/13 tests pass)
 npm test
 
-# Run Expo configuration & dependency doctor (21/21 checks pass)
+# 4. Expo configuration & dependency doctor (21/21 checks pass)
 npx expo-doctor
 ```
 

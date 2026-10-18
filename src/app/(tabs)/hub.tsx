@@ -10,11 +10,12 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { useApp } from '../../context/AppContext';
 import { SUBJECT_PALETTE } from '../../theme/colors';
+import { getLocalDateString } from '../../utils/date';
 
 export default function HubScreen() {
   const { theme } = useTheme();
@@ -39,7 +40,7 @@ export default function HubScreen() {
   const nextAssessment = pendingAssessments.length > 0 ? pendingAssessments[0] : null;
 
   // Today study minutes
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateString();
   const todayStudyMins = studySessions
     .filter((s) => s.start_time.startsWith(todayStr))
     .reduce((acc, s) => acc + s.duration_minutes, 0);

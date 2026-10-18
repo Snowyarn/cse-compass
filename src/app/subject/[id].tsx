@@ -33,7 +33,7 @@ export default function SubjectDetailScreen() {
   const [newUnitTitle, setNewUnitTitle] = useState('');
   const [showAddUnitInput, setShowAddUnitInput] = useState(false);
 
-  const loadData = () => {
+  const loadData = React.useCallback(() => {
     if (!id) return;
     const sub = Repository.getSubjectById(id);
     if (sub) {
@@ -41,11 +41,11 @@ export default function SubjectDetailScreen() {
       setSyllabus(Repository.getSyllabusForSubject(id));
       setTasks(Repository.getAllTasks({ subjectId: id }));
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     loadData();
-  }, [id]);
+  }, [loadData]);
 
   if (!subject) {
     return (
@@ -144,9 +144,12 @@ export default function SubjectDetailScreen() {
               </View>
               <Text style={[styles.heroTitle, { color: theme.textPrimary }]}>{subject.name}</Text>
               {subject.instructor ? (
-                <Text style={[styles.instructorHero, { color: theme.textSecondary }]}>
-                  👨‍🏫 {subject.instructor}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                  <Ionicons name="person-outline" size={13} color={theme.textMuted} />
+                  <Text style={[styles.instructorHero, { color: theme.textSecondary, marginTop: 0 }]}>
+                    {subject.instructor}
+                  </Text>
+                </View>
               ) : null}
             </View>
           </View>

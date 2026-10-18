@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { AppProvider } from '../context/AppContext';
 import { Toast } from '../components/Toast';
@@ -9,6 +10,30 @@ import { initDatabase } from '../database/db';
 
 function RootNavigation() {
   const { theme, isDark } = useTheme();
+
+  useEffect(() => {
+    // Check if app was opened via notification tap
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      const data = response?.notification?.request?.content?.data;
+      if (data?.taskId) {
+        router.push(`/task/${data.taskId}`);
+      }
+    });
+
+    // Handle notification tap while app is alive
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data;
+      if (data?.taskId) {
+        router.push(`/task/${data.taskId}`);
+      } else if (data?.url) {
+        router.push(data.url as any);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   return (
     <>

@@ -17,6 +17,7 @@ import { TaskCard } from '../../components/TaskCard';
 import { FocusTaskCard } from '../../components/FocusTaskCard';
 import { EmptyState } from '../../components/EmptyState';
 import { getRecommendedFocusTask } from '../../utils/taskRanking';
+import { getLocalDateString } from '../../utils/date';
 
 export default function HomeScreen() {
   const { theme } = useTheme();
@@ -40,7 +41,7 @@ export default function HomeScreen() {
     return new Date().toLocaleDateString(undefined, options);
   }, []);
 
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayStr = useMemo(() => getLocalDateString(), []);
 
   // Filter tasks for dashboard
   const todayTasks = useMemo(() => {
@@ -155,7 +156,7 @@ export default function HomeScreen() {
         <View style={[styles.summaryCard, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <View style={styles.summaryLeft}>
             <Text style={[styles.summaryCardTitle, { color: theme.textPrimary }]}>
-              Today's Execution
+              Today&apos;s Execution
             </Text>
             <Text style={[styles.summaryCardSub, { color: theme.textSecondary }]}>
               {todayStats.completed} of {todayStats.total} tasks completed
@@ -284,7 +285,7 @@ export default function HomeScreen() {
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleRow}>
               <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-                Today's Schedule
+                Today&apos;s Schedule
               </Text>
               <View style={[styles.countBadge, { backgroundColor: `${theme.primary}18` }]}>
                 <Text style={[styles.countText, { color: theme.primary }]}>

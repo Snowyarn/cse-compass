@@ -1,20 +1,32 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Task } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useApp } from '../context/AppContext';
 import { router } from 'expo-router';
+import { getLocalDateString } from '../utils/date';
 
+/**
+ * Props for the TaskCard component.
+ */
 interface TaskCardProps {
+  /** The academic task object containing title, deadlines, priority, and subtasks. */
   task: Task;
+  /** Optional custom tap handler. Defaults to opening task details screen. */
   onPress?: () => void;
+  /** Whether to render the subject tag pill on the card. Defaults to true. */
   showSubject?: boolean;
 }
 
+/**
+ * Reusable Academic Task Card component.
+ * Displays task completion checkbox with 44+ dp hitSlop, subject tag badge,
+ * deadline countdown, priority indicator, reminder status, and subtask progress.
+ */
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onPress, showSubject = true }) => {
   const { theme } = useTheme();
-  const { toggleTask, deleteTask, showToast } = useApp();
+  const { toggleTask, showToast } = useApp();
 
   const handleToggle = async (e?: any) => {
     e?.stopPropagation?.();
@@ -38,7 +50,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onPress, showSubject =
   const isOverdue = React.useMemo(() => {
     if (task.completed || !task.due_date) return false;
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = getLocalDateString(now);
     if (task.due_date < todayStr) return true;
     if (task.due_date === todayStr && task.due_time) {
       const currentHours = now.getHours().toString().padStart(2, '0');
@@ -51,8 +63,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onPress, showSubject =
 
   const isDueToday = React.useMemo(() => {
     if (!task.due_date) return false;
-    const todayStr = new Date().toISOString().split('T')[0];
-    return task.due_date === todayStr;
+    return task.due_date === getLocalDateString();
   }, [task.due_date]);
 
   // Subtask progress
@@ -80,6 +91,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onPress, showSubject =
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={handlePress}
+      accessibilityLabel={`Task: ${task.title}. Priority ${task.priority}.${task.completed ? ' Completed.' : ''}`}
+      accessibilityRole="button"
       style={[
         styles.card,
         {
@@ -94,7 +107,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onPress, showSubject =
         {/* Checkbox button */}
         <TouchableOpacity
           onPress={handleToggle}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityLabel={task.completed ? "Mark task as incomplete" : "Mark task as complete"}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: task.completed }}
           style={[
             styles.checkbox,
             {

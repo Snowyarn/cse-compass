@@ -1,32 +1,24 @@
 import * as SQLite from 'expo-sqlite';
-import {
-  Task,
-  Subtask,
-  Reminder,
-  Subject,
-  SyllabusUnit,
-  SyllabusTopic,
-  Assessment,
-  CodingProblem,
-  Project,
-  ProjectMilestone,
-  StudySession,
-  AppSettings,
-  ReminderType,
-} from '../types';
+import { getLocalDateString, addDaysToLocalDate } from '../utils/date';
+import { AppSettings } from '../types';
+
 
 let dbInstance: SQLite.SQLiteDatabase | null = null;
+let isInitialized = false;
 
 export const getDb = (): SQLite.SQLiteDatabase => {
   if (!dbInstance) {
     dbInstance = SQLite.openDatabaseSync('cse_compass.db');
   }
+  if (!isInitialized) {
+    initDatabaseSync(dbInstance);
+  }
   return dbInstance;
 };
 
-// Database Initialization & Schema Definition
-export const initDatabase = async (): Promise<void> => {
-  const db = getDb();
+// Synchronous schema initialization and seeding
+export const initDatabaseSync = (db: SQLite.SQLiteDatabase): void => {
+  if (isInitialized) return;
 
   // Create tables if not exist
   db.execSync(`
@@ -180,33 +172,26 @@ export const initDatabase = async (): Promise<void> => {
   if (!subjectCountRow || subjectCountRow.count === 0) {
     seedInitialData(db);
   }
+  isInitialized = true;
+};
+
+// Async wrapper for external callers
+export const initDatabase = async (): Promise<void> => {
+  const db = getDb();
+  initDatabaseSync(db);
 };
 
 // Seed Realistic B.Tech CSE Curriculum and Starter Content
-const seedInitialData = (db: SQLite.SQLiteDatabase): void => {
+export const seedInitialData = (db: SQLite.SQLiteDatabase): void => {
   const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
-  
-  // Future dates
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split('T')[0];
-
-  const in3Days = new Date(now);
-  in3Days.setDate(now.getDate() + 3);
-  const in3DaysStr = in3Days.toISOString().split('T')[0];
-
-  const in5Days = new Date(now);
-  in5Days.setDate(now.getDate() + 5);
-  const in5DaysStr = in5Days.toISOString().split('T')[0];
-
-  const in10Days = new Date(now);
-  in10Days.setDate(now.getDate() + 10);
-  const in10DaysStr = in10Days.toISOString().split('T')[0];
-
-  const in14Days = new Date(now);
-  in14Days.setDate(now.getDate() + 14);
-  const in14DaysStr = in14Days.toISOString().split('T')[0];
+  const todayStr = getLocalDateString(now);
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const tomorrowStr = getLocalDateString(tomorrow);
+  const in3Days = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3);
+  const in3DaysStr = getLocalDateString(in3Days);
+  const in5DaysStr = addDaysToLocalDate(todayStr, 5);
+  const in10DaysStr = addDaysToLocalDate(todayStr, 10);
+  const in14DaysStr = addDaysToLocalDate(todayStr, 14);
 
   // Default Settings
   const defaultSettings: AppSettings = {

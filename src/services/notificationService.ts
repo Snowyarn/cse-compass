@@ -94,42 +94,57 @@ export const NotificationService = {
   ): Date | null => {
     if (!dueDateStr) return null;
 
-    // Build the deadline Date object
-    const [year, month, day] = dueDateStr.split('-').map(Number);
+    // Validate and parse date components
+    const parts = dueDateStr.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return null;
+    const [year, month, day] = parts;
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
     let hour = 23;
     let minute = 59;
 
     if (dueTimeStr && dueTimeStr.includes(':')) {
       const [h, m] = dueTimeStr.split(':').map(Number);
-      hour = isNaN(h) ? 23 : h;
-      minute = isNaN(m) ? 59 : m;
+      hour = isNaN(h) || h < 0 || h > 23 ? 23 : h;
+      minute = isNaN(m) || m < 0 || m > 59 ? 59 : m;
     }
 
     const deadline = new Date(year, month - 1, day, hour, minute, 0, 0);
+    if (isNaN(deadline.getTime())) return null;
 
+    let trigger: Date;
     switch (reminderType) {
       case 'preset_5m':
-        return new Date(deadline.getTime() - 5 * 60 * 1000);
+        trigger = new Date(deadline.getTime() - 5 * 60 * 1000);
+        break;
       case 'preset_15m':
-        return new Date(deadline.getTime() - 15 * 60 * 1000);
+        trigger = new Date(deadline.getTime() - 15 * 60 * 1000);
+        break;
       case 'preset_30m':
-        return new Date(deadline.getTime() - 30 * 60 * 1000);
+        trigger = new Date(deadline.getTime() - 30 * 60 * 1000);
+        break;
       case 'preset_1h':
-        return new Date(deadline.getTime() - 60 * 60 * 1000);
+        trigger = new Date(deadline.getTime() - 60 * 60 * 1000);
+        break;
       case 'same_day_9am':
-        return new Date(year, month - 1, day, 9, 0, 0, 0);
+        trigger = new Date(year, month - 1, day, 9, 0, 0, 0);
+        break;
       case 'day_before_9am':
-        const prevDay = new Date(year, month - 1, day - 1, 9, 0, 0, 0);
-        return prevDay;
+        trigger = new Date(year, month - 1, day - 1, 9, 0, 0, 0);
+        break;
       case 'custom':
         if (customTimeStr) {
           const parsed = new Date(customTimeStr);
           return isNaN(parsed.getTime()) ? null : parsed;
         }
-        return new Date(deadline.getTime() - 30 * 60 * 1000);
+        trigger = new Date(deadline.getTime() - 30 * 60 * 1000);
+        break;
       default:
-        return new Date(deadline.getTime() - 15 * 60 * 1000);
+        trigger = new Date(deadline.getTime() - 15 * 60 * 1000);
+        break;
     }
+
+    return isNaN(trigger.getTime()) ? null : trigger;
   },
 
   // Format label for UI

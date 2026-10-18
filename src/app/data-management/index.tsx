@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +17,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useTheme } from '../../context/ThemeContext';
 import { useApp } from '../../context/AppContext';
 import { Repository } from '../../database/repository';
+import { getLocalDateString } from '../../utils/date';
 
 export default function DataManagementScreen() {
   const { theme } = useTheme();
@@ -30,7 +30,7 @@ export default function DataManagementScreen() {
   const handleExportJson = async () => {
     try {
       const jsonContent = Repository.exportFullDatabaseJson();
-      const fileName = `cse_compass_backup_${new Date().toISOString().split('T')[0]}.json`;
+      const fileName = `cse_compass_backup_${getLocalDateString()}.json`;
       const file = new File(Paths.cache, fileName);
       if (!file.exists) {
         file.create();
@@ -55,7 +55,7 @@ export default function DataManagementScreen() {
   const handleExportCsv = async () => {
     try {
       const csvContent = Repository.exportTasksCsv();
-      const fileName = `cse_tasks_${new Date().toISOString().split('T')[0]}.csv`;
+      const fileName = `cse_tasks_${getLocalDateString()}.csv`;
       const file = new File(Paths.cache, fileName);
       if (!file.exists) {
         file.create();

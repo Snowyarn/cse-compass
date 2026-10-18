@@ -23,15 +23,15 @@ export default function SyllabusScreen() {
 
   const selectedSubject = subjects.find((s) => s.id === selectedSubjectId) || subjects[0];
 
-  const loadSyllabus = () => {
+  const loadSyllabus = React.useCallback(() => {
     if (selectedSubjectId) {
       setSyllabus(Repository.getSyllabusForSubject(selectedSubjectId));
     }
-  };
+  }, [selectedSubjectId]);
 
   useEffect(() => {
     loadSyllabus();
-  }, [selectedSubjectId]);
+  }, [loadSyllabus]);
 
   const handleTopicStatusCycle = (topic: SyllabusTopic) => {
     const nextStatus: 'not_started' | 'in_progress' | 'completed' =

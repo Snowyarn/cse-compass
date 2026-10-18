@@ -137,6 +137,13 @@ export default function AnalyticsScreen() {
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <View style={styles.codingStatsRow}>
             <View style={styles.codeStatBox}>
+              <Text style={[styles.codeStatNum, { color: theme.textSecondary }]}>
+                {attemptedCount}
+              </Text>
+              <Text style={[styles.codeStatLabel, { color: theme.textSecondary }]}>Attempted</Text>
+            </View>
+
+            <View style={styles.codeStatBox}>
               <Text style={[styles.codeStatNum, { color: theme.success }]}>
                 {codingProblems.filter((p) => p.difficulty === 'Easy' && p.status === 'solved').length}
               </Text>

@@ -9,7 +9,9 @@ import {
   Switch,
   Alert,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -22,6 +24,7 @@ import {
   ReminderType,
 } from '../../types';
 import { NotificationService } from '../../services/notificationService';
+import { getLocalDateString, addDaysToLocalDate } from '../../utils/date';
 
 const TASK_CATEGORIES: TaskCategory[] = [
   'Lectures and classwork',
@@ -66,9 +69,11 @@ export default function CreateTaskScreen() {
 
   // Dates
   const [dueDate, setDueDate] = useState<string>(
-    params.initialDate || new Date().toISOString().split('T')[0]
+    params.initialDate || getLocalDateString()
   );
   const [dueTime, setDueTime] = useState('23:59');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   // Duration
   const [estimatedMinutes, setEstimatedMinutes] = useState('45');
@@ -126,9 +131,42 @@ export default function CreateTaskScreen() {
 
   // Quick Date Selectors
   const setQuickDate = (offsetDays: number) => {
+    setDueDate(addDaysToLocalDate(getLocalDateString(), offsetDays));
+  };
+
+  // Native Picker Helpers
+  const getDateForPicker = (): Date => {
+    const parts = dueDate.split('-').map(Number);
+    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return new Date();
+  };
+
+  const getTimeForPicker = (): Date => {
     const d = new Date();
-    d.setDate(d.getDate() + offsetDays);
-    setDueDate(d.toISOString().split('T')[0]);
+    const parts = dueTime.split(':').map(Number);
+    if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      d.setHours(parts[0], parts[1], 0, 0);
+    }
+    return d;
+  };
+
+  const onDateChange = (event: DateTimePickerEvent, selected?: Date) => {
+    setShowDatePicker(false);
+    if (event.type === 'set' && selected) {
+      setDueDate(getLocalDateString(selected));
+    }
+  };
+
+  const onTimeChange = (event: DateTimePickerEvent, selected?: Date) => {
+    setShowTimePicker(false);
+    if (event.type === 'set' && selected) {
+      const hours = String(selected.getHours()).padStart(2, '0');
+      const minutes = String(selected.getMinutes()).padStart(2, '0');
+      setDueTime(`${hours}:${minutes}`);
+    }
   };
 
   // Submit Handler
@@ -183,7 +221,11 @@ export default function CreateTaskScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Task Title Input */}
         <Text style={[styles.inputHeading, { color: theme.textSecondary }]}>TASK TITLE *</Text>
         <TextInput
@@ -307,6 +349,36 @@ export default function CreateTaskScreen() {
           })}
         </View>
 
+        {/* Academic Category Selector */}
+        <Text style={[styles.inputHeading, { color: theme.textSecondary }]}>ACADEMIC CATEGORY</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 4 }}>
+          {TASK_CATEGORIES.map((cat) => {
+            const isSelected = category === cat;
+            return (
+              <TouchableOpacity
+                key={cat}
+                onPress={() => setCategory(cat)}
+                style={[
+                  styles.choiceChip,
+                  {
+                    backgroundColor: isSelected ? `${theme.primary}20` : theme.surface,
+                    borderColor: isSelected ? theme.primary : theme.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.choiceChipText,
+                    { color: isSelected ? theme.primary : theme.textSecondary, fontWeight: isSelected ? '700' : '500' },
+                  ]}
+                >
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
         {/* Priority Selector */}
         <Text style={[styles.inputHeading, { color: theme.textSecondary }]}>PRIORITY LEVEL</Text>
         <View style={styles.priorityRow}>
@@ -375,25 +447,60 @@ export default function CreateTaskScreen() {
         <View style={styles.dateInputsRow}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.subLabel, { color: theme.textMuted }]}>Due Date (YYYY-MM-DD)</Text>
-            <TextInput
-              value={dueDate}
-              onChangeText={setDueDate}
-              placeholder="2026-10-15"
-              placeholderTextColor={theme.textMuted}
-              style={[styles.dateInput, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.textPrimary }]}
-            />
+            <View style={[styles.dateInputWithIcon, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <TouchableOpacity onPress={() => setShowDatePicker(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="calendar-outline" size={17} color={theme.primary} style={{ marginRight: 6 }} />
+              </TouchableOpacity>
+              <TextInput
+                value={dueDate}
+                onChangeText={setDueDate}
+                placeholder="2026-10-15"
+                placeholderTextColor={theme.textMuted}
+                style={[styles.dateInputInner, { color: theme.textPrimary }]}
+              />
+              <TouchableOpacity onPress={() => setShowDatePicker(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="chevron-down" size={14} color={theme.textMuted} />
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={{ width: 120 }}>
+          <View style={{ width: 130 }}>
             <Text style={[styles.subLabel, { color: theme.textMuted }]}>Due Time (HH:mm)</Text>
-            <TextInput
-              value={dueTime}
-              onChangeText={setDueTime}
-              placeholder="23:59"
-              placeholderTextColor={theme.textMuted}
-              style={[styles.dateInput, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.textPrimary }]}
-            />
+            <View style={[styles.dateInputWithIcon, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <TouchableOpacity onPress={() => setShowTimePicker(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="time-outline" size={17} color={theme.primary} style={{ marginRight: 6 }} />
+              </TouchableOpacity>
+              <TextInput
+                value={dueTime}
+                onChangeText={setDueTime}
+                placeholder="23:59"
+                placeholderTextColor={theme.textMuted}
+                style={[styles.dateInputInner, { color: theme.textPrimary }]}
+              />
+              <TouchableOpacity onPress={() => setShowTimePicker(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="chevron-down" size={14} color={theme.textMuted} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={getDateForPicker()}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={onDateChange}
+          />
+        )}
+
+        {showTimePicker && (
+          <DateTimePicker
+            value={getTimeForPicker()}
+            mode="time"
+            is24Hour={true}
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={onTimeChange}
+          />
+        )}
 
         {/* Reminders Selection */}
         <Text style={[styles.inputHeading, { color: theme.textSecondary }]}>SMART SCHEDULED REMINDERS</Text>
@@ -589,6 +696,7 @@ export default function CreateTaskScreen() {
           <Text style={styles.saveTaskButtonText}>Save Task & Arm Reminders</Text>
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -717,6 +825,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     fontSize: 13,
+  },
+  dateInputWithIcon: {
+    height: 42,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateInputInner: {
+    flex: 1,
+    fontSize: 13,
+    padding: 0,
   },
   remindersCard: {
     borderRadius: 12,

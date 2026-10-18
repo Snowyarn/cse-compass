@@ -14,6 +14,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useApp } from '../../context/AppContext';
 import { TaskCard } from '../../components/TaskCard';
 import { EmptyState } from '../../components/EmptyState';
+import { getLocalDateString } from '../../utils/date';
 
 type CalendarViewMode = 'month' | 'week' | 'agenda';
 
@@ -24,16 +25,16 @@ export default function CalendarScreen() {
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDateStr, setSelectedDateStr] = useState<string>(
-    new Date().toISOString().split('T')[0]
+    getLocalDateString()
   );
 
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayStr = useMemo(() => getLocalDateString(), []);
 
   // Jump to today
   const handleJumpToToday = () => {
     const now = new Date();
     setCurrentDate(now);
-    setSelectedDateStr(now.toISOString().split('T')[0]);
+    setSelectedDateStr(getLocalDateString(now));
   };
 
   // Month navigation
@@ -110,7 +111,7 @@ export default function CalendarScreen() {
       const d = daysInPrevMonth - i;
       const prevDate = new Date(year, month - 1, d);
       days.push({
-        dateStr: prevDate.toISOString().split('T')[0],
+        dateStr: getLocalDateString(prevDate),
         dayNumber: d,
         isCurrentMonth: false,
       });
@@ -120,7 +121,7 @@ export default function CalendarScreen() {
     for (let i = 1; i <= daysInCurrentMonth; i++) {
       const d = new Date(year, month, i);
       days.push({
-        dateStr: d.toISOString().split('T')[0],
+        dateStr: getLocalDateString(d),
         dayNumber: i,
         isCurrentMonth: true,
       });
@@ -132,7 +133,7 @@ export default function CalendarScreen() {
       for (let i = 1; i <= remaining; i++) {
         const nextDate = new Date(year, month + 1, i);
         days.push({
-          dateStr: nextDate.toISOString().split('T')[0],
+          dateStr: getLocalDateString(nextDate),
           dayNumber: i,
           isCurrentMonth: false,
         });
@@ -154,7 +155,7 @@ export default function CalendarScreen() {
       const d = new Date(weekStart);
       d.setDate(weekStart.getDate() + i);
       days.push({
-        dateStr: d.toISOString().split('T')[0],
+        dateStr: getLocalDateString(d),
         dayNumber: d.getDate(),
         dayName: d.toLocaleDateString(undefined, { weekday: 'narrow' }),
       });
